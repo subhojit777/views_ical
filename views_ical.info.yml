@@ -4,4 +4,4 @@ description: Provides an iCal Views style plugin.
 package: Views
 core: 8.x
 dependencies:
-  - views
+  - drupal:views
