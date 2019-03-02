@@ -13,6 +13,7 @@ function views_ical_preprocess_views_view_ical(&$variables) {
   module_load_include('inc', 'views', 'views.theme');
   
   $view = $variables['view'];
+  $view->getResponse()->headers->set('Content-Type', 'text/calendar; charset=utf-8');
   if ($view->display_handler->getOption('sitename_title')) {
     $title = $config->get('name');
     if ($slogan = $config->get('slogan')) {
