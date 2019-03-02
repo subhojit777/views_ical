@@ -1,13 +1,9 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\views_ical\Plugin\views\style\Ical.
- */
-
 namespace Drupal\views_ical\Plugin\views\style;
 
 use Drupal\views\Plugin\views\style\StylePluginBase;
+use Drupal\Core\Url;
 
 /**
  * Style plugin to render an iCal feed.
@@ -27,4 +23,51 @@ class Ical extends StylePluginBase {
   protected $usesGrouping = FALSE;
   protected $usesRowPlugin = TRUE;
   protected $usesOptions = FALSE;
+
+  public function attachTo(array &$build, $display_id, Url $feed_url, $title) {
+    $url_options = [];
+    $input = $this->view->getExposedInput();
+    if ($input) {
+      $url_options['query'] = $input;
+    }
+    $url_options['absolute'] = TRUE;
+
+    $url = $feed_url->setOptions($url_options)->toString();
+
+    $this->view->feedIcons[] = [];
+
+    // Attach a link to the iCal feed, which is an alternate representation.
+    $build['#attached']['html_head_link'][][] = [
+      'rel' => 'alternate',
+      'type' => 'application/calendar',
+      'href' => $url,
+      'title' => $title,
+    ];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function render() {
+    if (empty($this->view->rowPlugin)) {
+      trigger_error('Drupal\views_ical\Plugin\views\style\Ical: Missing row plugin', E_WARNING);
+      return [];
+    }
+    $rows = [];
+
+    foreach ($this->view->result as $row_index => $row) {
+      $this->view->row_index = $row_index;
+      $rows[] = $this->view->rowPlugin->render($row);
+    }
+
+    $build = [
+      '#theme' => $this->themeFunctions(),
+      '#view' => $this->view,
+      '#options' => $this->options,
+      '#rows' => $rows,
+    ];
+    unset($this->view->row_index);
+    return $build;
+  }
+
 }
