@@ -23,6 +23,6 @@ DTEND
 SUMMARY
 UID
 
-For date fields, use the "Custom" formatter and set the format to "Ymd\THis\Z". This format should also use the UTC timezone override as it has the "Z" at the end. 
+For date fields, use the "Views iCal date" formatter, or select "Custom" formatter and set the format to "Ymd\THis\Z". This format should also use the UTC timezone override as it has the "Z" at the end. 
 
 Un-check the "place colon after label" and "Link to content" options in each field's settings. 
