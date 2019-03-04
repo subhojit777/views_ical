@@ -15,4 +15,4 @@
  *
  * @ingroup themeable
  */
-#}BEGIN:VCALENDAR{{ "\r\n" }}VERSION:2.0{{ "\r\n" }}METHOD:PUBLISH{{ "\r\n" }}X-WR-CALNAME;VALUE=TEXT:{% if title %}{{ title }}{% endif %}{{ "\r\n" }}PRODID:-//Drupal iCal API//EN{{ "\r\n" }}{% for row in rows %}{{ row.content }}{% endfor %}END:VCALENDAR{{ "\r\n" }}
+#}BEGIN:VCALENDAR{{ "\r\n" }}VERSION:2.0{{ "\r\n" }}METHOD:PUBLISH{{ "\r\n" }}X-WR-CALNAME;VALUE=TEXT:{% if title %}{{ title }}{% endif %}{{ "\r\n" }}PRODID:-//Drupal iCal API//EN{{ "\r\n" }}{% for row in rows %}{{ row.content }}{% endfor %}END:VCALENDAR{{ "\r\n" }}{# skip line ending #}

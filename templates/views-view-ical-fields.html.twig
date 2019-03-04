@@ -50,4 +50,4 @@
   {%- endif %}
   {%- if field.wrapper_element -%}
     </{{ field.wrapper_element }}>
-  {%- endif %}{% endspaceless %}{{ "\r\n" }}{%- endfor %}END:VEVENT
+  {%- endif %}{% endspaceless %}{{ "\r\n" }}{%- endfor %}END:VEVENT{{ "\r\n" }}{# skip line ending #}
