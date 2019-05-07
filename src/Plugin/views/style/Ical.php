@@ -2,6 +2,7 @@
 
 namespace Drupal\views_ical\Plugin\views\style;
 
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\style\StylePluginBase;
 use Drupal\Core\Url;
 
@@ -22,7 +23,53 @@ class Ical extends StylePluginBase {
   protected $usesFields = TRUE;
   protected $usesGrouping = FALSE;
   protected $usesRowPlugin = TRUE;
-  protected $usesOptions = FALSE;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function defineOptions() {
+    $options = parent::defineOptions();
+
+    $options['date_field'] = ['default' => NULL];
+    $options['summary_field'] = ['default' => NULL];
+    $options['location_field'] = ['default' => NULL];
+
+    return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildOptionsForm(&$form, FormStateInterface $form_state) {
+    parent::buildOptionsForm($form, $form_state);
+    /** @var array $field_options */
+    $field_options = $this->displayHandler->getFieldLabels();
+
+    $form['date_field'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('Date field'),
+      '#options' => $field_options,
+      '#default_value' => $this->options['date_field'],
+      '#description' => $this->t('Please identify the field to use as the iCal date for each item in this view.'),
+      '#required' => TRUE,
+    );
+
+    $form['summary_field'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('SUMMARY field'),
+      '#options' => $field_options,
+      '#default_value' => $this->options['summary_field'],
+      '#description' => $this->t('You may optionally change the SUMMARY component for each event in the iCal output. Choose which text field you would like to be output as the SUMMARY.'),
+    );
+
+    $form['location_field'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('LOCATION field'),
+      '#options' => $field_options,
+      '#default_value' => $this->options['location_field'],
+      '#description' => $this->t('You may optionally include a LOCATION component for each event in the iCal output. Choose which text field you would like to be output as the LOCATION.'),
+    );
+  }
 
   public function attachTo(array &$build, $display_id, Url $feed_url, $title) {
     $url_options = [];
