@@ -11,10 +11,11 @@
  */
 function views_ical_preprocess_views_view_ical(&$variables) {
   module_load_include('inc', 'views', 'views.theme');
-  
+
   $view = $variables['view'];
   $view->getResponse()->headers->set('Content-Type', 'text/calendar; charset=utf-8');
   if ($view->display_handler->getOption('sitename_title')) {
+    $config = \Drupal::config('system.site');
     $title = $config->get('name');
     if ($slogan = $config->get('slogan')) {
       $title .= ' - ' . $slogan;
@@ -24,7 +25,7 @@ function views_ical_preprocess_views_view_ical(&$variables) {
     $title = $view->getTitle();
   }
   $variables['title'] = $title;
-  
+
   template_preprocess_views_view_unformatted($variables);
 }
 
