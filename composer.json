@@ -5,6 +5,6 @@
     "license": "GPL-2.0+",
     "minimum-stability": "dev",
     "require": {
-        "eluceo/ical": "^0.15.0"
+        "eluceo/ical": "^0.15"
     }
 }
