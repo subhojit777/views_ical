@@ -1,5 +1,10 @@
 <?php
 
+use Drupal\Component\Datetime\DateTimePlus;
+use Eluceo\iCal\Component\Calendar;
+use Eluceo\iCal\Component\Event;
+use Eluceo\iCal\Component\Timezone;
+
 /**
  * Prepares variables for Views iCal template.
  *
@@ -28,20 +33,43 @@ function views_ical_preprocess_views_view_ical(&$variables) {
   }
   $variables['title'] = $title;
 
+  $calendar = new Calendar('-//Drupal iCal API//EN');
+  $user_timezone = \drupal_get_user_timezone();
+  $dtz = new \DateTimeZone($user_timezone);
+
+  // Set timezone data to the calendar.
+  /** @var string $user_timezone */
+  $v_timezone = new Timezone($user_timezone);
+  $calendar->setTimezone($v_timezone);
+
   foreach ($variables['rows'] as $row) {
+    $event = new Event();
+
+    // Making sure that the ical calendar has the correct datetime as per user's
+    // timezone.
+    // An ical calendar downloaded from GMail has been referred as a proof of
+    // correctness.
     $date = $ical_style->getFieldValue($row['#row']->index, $variables['options']['date_field']);
-    // TODO: Push date to ical generator.
+    $datetime = new DateTimePlus($date, 'UTC');
+    $datetime->setTimezone($dtz);
+    $event->setDtStart($datetime->getPhpDateTime());
 
     $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
     if ($summary) {
-      // TODO: Push summary to ical generator.
+      $event->setSummary($summary);
     }
 
     $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
     if ($location) {
-      // TODO: Push location to ical generator.
+      $event->setLocation($location);
     }
+
+    $event->setUseTimezone(TRUE);
+
+    $calendar->addComponent($event);
   }
+
+  $variables['ical'] = $calendar->render();
 
   template_preprocess_views_view_unformatted($variables);
 }
