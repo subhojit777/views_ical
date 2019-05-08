@@ -63,6 +63,11 @@ function views_ical_preprocess_views_view_ical(&$variables) {
       $event->setLocation($location);
     }
 
+    $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
+    if ($description) {
+      $event->setDescription(\strip_tags($description));
+    }
+
     $event->setUseTimezone(TRUE);
 
     $calendar->addComponent($event);

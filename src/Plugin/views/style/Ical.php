@@ -33,6 +33,7 @@ class Ical extends StylePluginBase {
     $options['date_field'] = ['default' => NULL];
     $options['summary_field'] = ['default' => NULL];
     $options['location_field'] = ['default' => NULL];
+    $options['description_field'] = ['default' => NULL];
 
     return $options;
   }
@@ -68,6 +69,14 @@ class Ical extends StylePluginBase {
       '#options' => $field_options,
       '#default_value' => $this->options['location_field'],
       '#description' => $this->t('You may optionally include a LOCATION component for each event in the iCal output. Choose which text field you would like to be output as the LOCATION.'),
+    );
+
+    $form['description_field'] = array(
+      '#type' => 'select',
+      '#title' => $this->t('DESCRIPTION field'),
+      '#options' => $field_options,
+      '#default_value' => $this->options['description_field'],
+      '#description' => $this->t('You may optionally include a DESCRIPTION component for each event in the iCal output. Choose which text field you would like to be output as the DESCRIPTION.'),
     );
   }
 
