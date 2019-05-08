@@ -1,6 +1,5 @@
 <?php
 
-use Drupal\Component\Datetime\DateTimePlus;
 use Eluceo\iCal\Component\Calendar;
 use Eluceo\iCal\Component\Event;
 use Eluceo\iCal\Component\Timezone;
@@ -50,9 +49,9 @@ function views_ical_preprocess_views_view_ical(&$variables) {
     // An ical calendar downloaded from GMail has been referred as a proof of
     // correctness.
     $date = $ical_style->getFieldValue($row['#row']->index, $variables['options']['date_field']);
-    $datetime = new DateTimePlus($date, 'UTC');
+    $datetime = new \DateTime($date, new \DateTimeZone('UTC'));
     $datetime->setTimezone($dtz);
-    $event->setDtStart($datetime->getPhpDateTime());
+    $event->setDtStart($datetime);
 
     $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
     if ($summary) {
