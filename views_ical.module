@@ -1,5 +1,6 @@
 <?php
 
+use Drupal\views\Plugin\views\field\EntityField;
 use Eluceo\iCal\Component\Calendar;
 use Eluceo\iCal\Component\Event;
 use Eluceo\iCal\Component\Timezone;
@@ -15,8 +16,12 @@ use Eluceo\iCal\Component\Timezone;
  */
 function views_ical_preprocess_views_view_ical(&$variables) {
   module_load_include('inc', 'views', 'views.theme');
+  /** @var \Drupal\Core\Entity\EntityFieldManagerInterface $field_manager */
+  $field_manager = \Drupal::service('entity_field.manager');
 
   $view = $variables['view'];
+  /** @var \Drupal\views\Plugin\views\field\EntityField[] $fields */
+  $fields = $view->field;
   /** @var \Drupal\views_ical\Plugin\views\style\Ical $ical_style */
   $ical_style = $view->style_plugin;
   $view->getResponse()->headers->set('Content-Type', 'text/calendar; charset=utf-8');
@@ -41,37 +46,71 @@ function views_ical_preprocess_views_view_ical(&$variables) {
   $v_timezone = new Timezone($user_timezone);
   $calendar->setTimezone($v_timezone);
 
+  /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $field_storage_definitions */
+  $field_storage_definitions = $field_manager->getFieldStorageDefinitions($fields[$variables['options']['date_field']]->definition['entity_type']);
+  $field_definition = $field_storage_definitions[$fields[$variables['options']['date_field']]->definition['field_name']];
+
   foreach ($variables['rows'] as $row) {
     $event = new Event();
+    /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
+    $entity = $row['#row']->_entity;
 
-    // Making sure that the ical calendar has the correct datetime as per user's
-    // timezone.
-    // An ical calendar downloaded from GMail has been referred as a proof of
-    // correctness.
-    $date = $ical_style->getFieldValue($row['#row']->index, $variables['options']['date_field']);
-    $datetime = new \DateTime($date, new \DateTimeZone('UTC'));
-    $datetime->setTimezone($dtz);
-    $event->setDtStart($datetime);
+    if ($field_definition->getType() === 'date_recur') {
+      $field_items = $row['#row']->_entity->{$variables['options']['date_field']};
 
-    $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
-    if ($summary) {
-      $event->setSummary($summary);
+      // Making sure that the ical calendar has the correct datetime as per
+      // user's timezone.
+      // An ical calendar downloaded from GMail has been referred as a proof of
+      // correctness.
+      /** @var \Drupal\date_recur\Plugin\Field\FieldType\DateRecurItem $item */
+      foreach ($field_items as $index => $item) {
+        if ($item->isRecurring()) {
+          /** @var \Drupal\date_recur\DateRange[] $occurrences */
+          $occurrences = $item->getHelper()->getOccurrences();
+
+          foreach ($occurrences as $occurrence) {
+            // TODO: Create ical events here.
+          }
+        }
+      }
+
+      // Create events by date entries.
+      foreach ($entity->get($variables['options']['date_field'])->getValue() as $date_entry) {
+        $start_datetime = new \DateTime($date_entry['value'], new \DateTimeZone('UTC'));
+        // TODO: Use the timezone setted for the date field.
+        $start_datetime->setTimezone($dtz);
+        $event->setDtStart($start_datetime);
+
+        if (!empty($date_entry['end_value'])) {
+          $end_datetime = new \DateTime($date_entry['end_value'], new \DateTimeZone('UTC'));
+          // TODO: Use the timezone setted for the date field.
+          $end_datetime->setTimezone($dtz);
+          $event->setDtEnd($end_datetime);
+        }
+
+        $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
+        if ($summary) {
+          $event->setSummary($summary);
+        }
+
+        $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
+        if ($location) {
+          $event->setLocation($location);
+        }
+
+        $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
+        if ($description) {
+          $event->setDescription(\strip_tags($description));
+        }
+
+        $event->setUseTimezone(TRUE);
+      }
+
     }
-
-    $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
-    if ($location) {
-      $event->setLocation($location);
-    }
-
-    $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
-    if ($description) {
-      $event->setDescription(\strip_tags($description));
-    }
-
-    $event->setUseTimezone(TRUE);
 
     $calendar->addComponent($event);
   }
+
 
   $variables['ical'] = $calendar->render();
 
