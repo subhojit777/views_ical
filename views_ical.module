@@ -78,18 +78,18 @@ function views_ical_preprocess_views_view_ical(&$variables) {
           // TODO: Move this code for setting defaults inside a method.
           $event = new Event();
 
-          $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
-          if ($summary) {
+          if ($variables['options']['summary_field']) {
+            $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
             $event->setSummary($summary);
           }
 
-          $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
-          if ($location) {
+          if ($variables['options']['location_field']) {
+            $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
             $event->setLocation($location);
           }
 
-          $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
-          if ($description) {
+          if ($variables['options']['description_field']) {
+            $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
             $event->setDescription(\strip_tags($description));
           }
 
@@ -115,18 +115,18 @@ function views_ical_preprocess_views_view_ical(&$variables) {
         // TODO: Move this code for setting defaults inside a method.
         $event = new Event();
 
-        $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
-        if ($summary) {
+        if ($variables['options']['summary_field']) {
+          $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
           $event->setSummary($summary);
         }
 
-        $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
-        if ($location) {
+        if ($variables['options']['location_field']) {
+          $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
           $event->setLocation($location);
         }
 
-        $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
-        if ($description) {
+        if ($variables['options']['description_field']) {
+          $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
           $event->setDescription(\strip_tags($description));
         }
 
