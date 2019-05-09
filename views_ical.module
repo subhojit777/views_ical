@@ -37,6 +37,8 @@ function views_ical_preprocess_views_view_ical(&$variables) {
   }
   $variables['title'] = $title;
 
+  // TODO: Move the calendar generation inside
+  // TODO: \Drupal\views_ical\Plugin\views\style\Ical.
   $calendar = new Calendar('-//Drupal iCal API//EN');
   $user_timezone = \drupal_get_user_timezone();
 
@@ -46,49 +48,72 @@ function views_ical_preprocess_views_view_ical(&$variables) {
 
   /** @var \Drupal\Core\Field\FieldDefinitionInterface[] $field_storage_definitions */
   $field_storage_definitions = $field_manager->getFieldStorageDefinitions($fields[$variables['options']['date_field']]->definition['entity_type']);
-  $field_definition = $field_storage_definitions[$fields[$variables['options']['date_field']]->definition['field_name']];
+  $date_field_definition = $field_storage_definitions[$fields[$variables['options']['date_field']]->definition['field_name']];
+
+  // Make sure the events are made as per the configuration in view.
+  /** @var string $timezone_override */
+  $timezone_override = $fields[$variables['options']['date_field']]->options['settings']['timezone_override'];
+  if ($timezone_override) {
+    $timezone = new \DateTimeZone($timezone_override);
+  }
+  else {
+    $timezone = new \DateTimeZone($user_timezone);
+  }
 
   foreach ($variables['rows'] as $row) {
-    $event = new Event();
     /** @var \Drupal\Core\Entity\ContentEntityInterface $entity */
     $entity = $row['#row']->_entity;
 
-    if ($field_definition->getType() === 'date_recur') {
+    // Use date_recur's API to generate the events.
+    // Recursive events will be automatically handled here.
+    if ($date_field_definition->getType() === 'date_recur') {
+      /** @var \Drupal\date_recur\Plugin\Field\FieldType\DateRecurItem[] $item */
       $field_items = $row['#row']->_entity->{$variables['options']['date_field']};
 
-      /** @var \Drupal\date_recur\Plugin\Field\FieldType\DateRecurItem $item */
       foreach ($field_items as $index => $item) {
-        if ($item->isRecurring()) {
-          /** @var \Drupal\date_recur\DateRange[] $occurrences */
-          $occurrences = $item->getHelper()->getOccurrences();
+        /** @var \Drupal\date_recur\DateRange[] $occurrences */
+        $occurrences = $item->getHelper()->getOccurrences();
 
-          foreach ($occurrences as $occurrence) {
-            // TODO: Create ical events here.
+        foreach ($occurrences as $occurrence) {
+          // TODO: Move this code for setting defaults inside a method.
+          $event = new Event();
+
+          $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
+          if ($summary) {
+            $event->setSummary($summary);
           }
+
+          $location = $ical_style->getFieldValue($row['#row']->index, $variables['options']['location_field']);
+          if ($location) {
+            $event->setLocation($location);
+          }
+
+          $description = $ical_style->getFieldValue($row['#row']->index, $variables['options']['description_field']);
+          if ($description) {
+            $event->setDescription(\strip_tags($description));
+          }
+
+          $event->setUseTimezone(TRUE);
+
+          /** @var \DateTime $start_datetime */
+          $start_datetime = $occurrence->getStart();
+          $start_datetime->setTimezone($timezone);
+          $event->setDtStart($start_datetime);
+
+          /** @var \DateTime $end_datetime */
+          $end_datetime = $occurrence->getEnd();
+          $end_datetime->setTimezone($timezone);
+          $event->setDtEnd($end_datetime);
+
+          $calendar->addComponent($event);
         }
       }
-
+    }
+    else {
       // Create events by date entries.
       foreach ($entity->get($variables['options']['date_field'])->getValue() as $date_entry) {
-        // Set event timezone override if configured in views.
-        /** @var string $timezone_override */
-        $timezone_override = $fields[$variables['options']['date_field']]->options['settings']['timezone_override'];
-        if ($timezone_override) {
-          $dtz = new \DateTimeZone($timezone_override);
-        }
-        else {
-          $dtz = new \DateTimeZone($user_timezone);
-        }
-
-        $start_datetime = new \DateTime($date_entry['value'], new \DateTimeZone('UTC'));
-        $start_datetime->setTimezone($dtz);
-        $event->setDtStart($start_datetime);
-
-        if (!empty($date_entry['end_value'])) {
-          $end_datetime = new \DateTime($date_entry['end_value'], new \DateTimeZone('UTC'));
-          $end_datetime->setTimezone($dtz);
-          $event->setDtEnd($end_datetime);
-        }
+        // TODO: Move this code for setting defaults inside a method.
+        $event = new Event();
 
         $summary = $ical_style->getFieldValue($row['#row']->index, $variables['options']['summary_field']);
         if ($summary) {
@@ -106,11 +131,20 @@ function views_ical_preprocess_views_view_ical(&$variables) {
         }
 
         $event->setUseTimezone(TRUE);
+
+        $start_datetime = new \DateTime($date_entry['value'], new \DateTimeZone('UTC'));
+        $start_datetime->setTimezone($timezone);
+        $event->setDtStart($start_datetime);
+
+        if (!empty($date_entry['end_value'])) {
+          $end_datetime = new \DateTime($date_entry['end_value'], new \DateTimeZone('UTC'));
+          $end_datetime->setTimezone($timezone);
+          $event->setDtEnd($end_datetime);
+        }
+
+        $calendar->addComponent($event);
       }
-
     }
-
-    $calendar->addComponent($event);
   }
 
 
