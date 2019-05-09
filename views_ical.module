@@ -39,9 +39,7 @@ function views_ical_preprocess_views_view_ical(&$variables) {
 
   $calendar = new Calendar('-//Drupal iCal API//EN');
   $user_timezone = \drupal_get_user_timezone();
-  $dtz = new \DateTimeZone($user_timezone);
 
-  // Set timezone data to the calendar.
   /** @var string $user_timezone */
   $v_timezone = new Timezone($user_timezone);
   $calendar->setTimezone($v_timezone);
@@ -58,10 +56,6 @@ function views_ical_preprocess_views_view_ical(&$variables) {
     if ($field_definition->getType() === 'date_recur') {
       $field_items = $row['#row']->_entity->{$variables['options']['date_field']};
 
-      // Making sure that the ical calendar has the correct datetime as per
-      // user's timezone.
-      // An ical calendar downloaded from GMail has been referred as a proof of
-      // correctness.
       /** @var \Drupal\date_recur\Plugin\Field\FieldType\DateRecurItem $item */
       foreach ($field_items as $index => $item) {
         if ($item->isRecurring()) {
@@ -76,14 +70,22 @@ function views_ical_preprocess_views_view_ical(&$variables) {
 
       // Create events by date entries.
       foreach ($entity->get($variables['options']['date_field'])->getValue() as $date_entry) {
+        // Set event timezone override if configured in views.
+        /** @var string $timezone_override */
+        $timezone_override = $fields[$variables['options']['date_field']]->options['settings']['timezone_override'];
+        if ($timezone_override) {
+          $dtz = new \DateTimeZone($timezone_override);
+        }
+        else {
+          $dtz = new \DateTimeZone($user_timezone);
+        }
+
         $start_datetime = new \DateTime($date_entry['value'], new \DateTimeZone('UTC'));
-        // TODO: Use the timezone setted for the date field.
         $start_datetime->setTimezone($dtz);
         $event->setDtStart($start_datetime);
 
         if (!empty($date_entry['end_value'])) {
           $end_datetime = new \DateTime($date_entry['end_value'], new \DateTimeZone('UTC'));
-          // TODO: Use the timezone setted for the date field.
           $end_datetime->setTimezone($dtz);
           $event->setDtEnd($end_datetime);
         }
